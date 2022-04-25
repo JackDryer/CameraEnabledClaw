@@ -159,9 +159,12 @@ class XYZ():
         #print("x",distance)
         #print("y",np.linalg.norm(np.linalg.norm(pointunderclaw-highypoint)))
         if pos[2] ==0:
-            print("0 Height")
+            warnings.warn("0 Height")
             return
         expecteddisstance = 10
+        if distance==0:
+            warnings.warn("0 Point Distance Detected")
+            return
         self.scalefactor = (expecteddisstance/distance)/(pos[2]+self.yoffset)
         # set points to be in the correct scale
         frameCenter = [i/2 for i in self.frameDims]
@@ -178,7 +181,7 @@ class XYZ():
             self.angle=(2*np.pi)-yanlge
         self.angle = self.angle-(np.pi/2)
         if np.isnan(self.angle):
-            print("nan detected")
+            warnings.warn("nan detected")
             #print(difference,pointunderclaw,highxpoint,highypoint)
             self.angle =np.pi
         pointunderclaw =FrameOperations.rotatePoints(unaffected,self.angle,frameCenter)
@@ -198,7 +201,7 @@ class XYZ():
         try:
             point = [int (i) for i in point]# ensure is a list of cords
         except ValueError:
-            print("Unconvertable value found in Flip point")
+            warnings.warn("Unconvertable value found in Flip point",point)
             return point
         point[1] = self.frameDims[1]-point[1]
         return point
