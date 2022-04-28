@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+CENTERCIRCLECOLOUR = (0,255,255)
+CONTOURCOLOUR=(0, 255, 0)
+MAXCAMERAS = 10
 
 def maskImage(frame,colour,tollerance=10,closings=1,openings=1,dilateions=0):
     frame = cv2.resize(frame, None, fx=1, fy=1, interpolation=cv2.INTER_AREA)
@@ -60,10 +63,10 @@ def findCentre(frame, mask,minradius=100):
         else:
           center = (int(x),int(y))
         if radius > minradius:
-            cv2.circle(frame, center, int(60*scale), (0, 255, 255), 10*scale)
-            cv2.circle(frame, center, int(10*scale), (0, 255, 255), -1)
+            cv2.circle(frame, center, int(60*scale), CENTERCIRCLECOLOUR, 10*scale)
+            cv2.circle(frame, center, int(10*scale), CENTERCIRCLECOLOUR, -1)
             centerPoint = [center[0], center[1]]
-    cv2.drawContours(frame, contours, -1, (0, 255, 0), 3)
+    cv2.drawContours(frame, contours, -1, CONTOURCOLOUR, 3)
     return(frame, centerPoint)
 def findCentreLargest(frame,mask):
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -122,6 +125,16 @@ def distanceBetween(point1,point2):
 
 def scalePoint(point:np.array,scalefactor,origin=(0,0)):
     return (scalefactor*(point-origin))+origin
+
+def getCameraIndexes():
+    # checks the first 10 indexes.
+    arr = []
+    for i in range(MAXCAMERAS):
+        cap = cv2.VideoCapture(i,cv2.CAP_DSHOW)# suppresses warings
+        if cap.isOpened():
+            arr.append(i)
+        cap.release()
+    return arr
 
 # based off https://stackoverflow.com/questions/34372480/rotate-point-about-another-point-in-degrees-python
 def rotatePoints(points, angle=0, origin=(0, 0), anlgleunit="Radians"):
