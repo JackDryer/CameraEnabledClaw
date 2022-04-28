@@ -1,4 +1,3 @@
-import re
 from typing import List,Generator
 import cv2
 import numpy as np
@@ -7,6 +6,9 @@ import warnings
 import FrameOperations
 CLAWOPEN=160
 CLAWCLOSED = 32
+PRINTERLOWERED =25
+
+BOXCOLOUR =(255,255,0)
 class XYZ():
     def __init__(self):
         self.boxpos = [10,10]
@@ -53,20 +55,22 @@ class XYZ():
         return maxx,maxy
     def createViewRenderer(self,maxx,maxy,height):
         ##create renderer
-        # angle = self.angle%(np.pi/2)
-        # if (angle>np.pi/4 and self.angle<0):
-        #     maxx,maxy = maxy,maxx
+        angle = self.angle%(np.pi/2)
+        if (angle>np.pi/4 and self.angle<0):
+            maxx,maxy = maxy,maxx
         points = [(0,0),(0,maxy),(maxx,maxy),(maxx,0)]
-        # points = FrameOperations.rotatePoints(points,angle,(0,maxy))  
-        # points = points/(self.scalefactor*(height+self.yoffset))
-        # ydiff = points[0][1]
-        # points -=[0,ydiff]
-        points = [self.coroodinateToPoint(i,(maxx/2,maxy/2,self.printerdims[2])) for i in points]
+        points = FrameOperations.rotatePoints(points,angle,(0,maxy))  
+        points = points/(self.scalefactor*(height+self.yoffset))
+        ydiff = points[0][1]
+        points -=[0,ydiff]
+        #points = [self.coroodinateToPoint(i,(maxx/2,maxy/2,self.printerdims[2])) for i in points]
         def drawer(frame):
-            return cv2.polylines(frame,np.int32([points]),True,(255,255,0),3)
+            return cv2.polylines(frame,np.int32([points]),True,BOXCOLOUR,3)
         return drawer
     def create_search_path(self,maxx,maxy)->Generator:
         "does not require any thing to be sent into it, genorates a path to march a box accross the printer space"
+        maxx = maxx/2
+        maxy = maxy/2
         yield 0,0,self.printerdims[2],CLAWOPEN
         for y in range(0,self.printerdims[1],int(maxy)):
             for x in range(0,self.printerdims[0],int(maxx)):
@@ -104,7 +108,7 @@ class XYZ():
             print("Path Finished without detecting point")
             return
         frame =yield frame,(coordinate +[None, None])#move to new location
-        frame =yield frame,(None, None, 25,None) #lower
+        frame =yield frame,(None, None, PRINTERLOWERED,None) #lower
         frame = yield frame,(None, None, None, CLAWCLOSED) #close claw
         #yield None,None, 100, None
         frame =yield frame,(self.boxpos +[100,None])
