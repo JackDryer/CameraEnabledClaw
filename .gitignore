@@ -1,0 +1,9 @@
+*.mp4
+*.odp
+*jpg
+*.png
+launch.json
+*.pyc
+/old/
+Make\ Spin.py
+*.odp#
