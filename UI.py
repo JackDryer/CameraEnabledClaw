@@ -8,6 +8,17 @@ from os import scandir
 import FrameOperations
 from GCode import createPrinter
 import XYZFrames
+CENTERDOTCOLOUR=(0,255,255)
+YDOTCOLOUR=(255,0,255)
+XDOTCOLOUR=(255,255,0)
+
+
+BACKGROUNDCOLOUR= "#d94f25"
+TEXTBACKGORUNDCOLOUR = "#a63c1c"
+ACTIVEBACKGROUNDCOLOUR = "#2585d9"
+FOREGROUNDCOLOUR = "White"
+SELECTCOLOUR = "Black"
+
 
 class App():
     def __init__(self):
@@ -26,7 +37,11 @@ class App():
         self.auto_path =None
         self.rendertextcommand = None
         self.numframes = 1
+        loading = tk.Label(self.root,text="Loading Printer...")
+        loading.grid(sticky = "NSEW")
+        self.root.update()
         self.printer = createPrinter()
+        loading.grid_forget()
         self.load_tkinter()
         self.update()
         self.root.mainloop()
@@ -78,16 +93,15 @@ class App():
                         dotpos = pos.copy()
                         dotpos[0] -= self.xyz.dot_offset[0]
                         dotpos[1] -= self.xyz.dot_offset[1]
-                        cv2.circle(self.frame, self.xyz.coroodinateToPoint(dotpos[:2],printerpos=pos),10,(0,255,255),-1)
-                        cv2.circle(self.frame, self.xyz.coroodinateToPoint((dotpos[0],dotpos[1]+10),printerpos=pos),10,(255,0,255),-1)
-                        cv2.circle(self.frame, self.xyz.coroodinateToPoint((dotpos[0]+10,dotpos[1]),printerpos=pos),10,(255,255,0),-1)
+                        cv2.circle(self.frame, self.xyz.coroodinateToPoint(dotpos[:2],printerpos=pos),10,CENTERDOTCOLOUR,-1)
+                        cv2.circle(self.frame, self.xyz.coroodinateToPoint((dotpos[0],dotpos[1]+10),printerpos=pos),10,YDOTCOLOUR,-1)
+                        cv2.circle(self.frame, self.xyz.coroodinateToPoint((dotpos[0]+10,dotpos[1]),printerpos=pos),10,XDOTCOLOUR,-1)
                         #self.frame= self.xyz.createViewRenderer(*self.xyz.getMaxViewDims(pos[2]),pos[2])(self.frame)
                     #bw = cv2.cvtColor(self.frame,cv2.COLOR_BGR2GRAY)
                     #bw, center=  readcv2.findCentreOfCirle(bw)
                     #self.configureCameraCalibation((0,0),(3,4),(0,1))
                     self.render(self.frame,*masks)
                 elif self.mode.get() ==3:
-                    self.update_pos()
                     masks = []
                     for i in self.HSVdisplayers.values():
                         if i.render.get():
@@ -184,8 +198,11 @@ class App():
             full = np.concatenate((top,bottom), axis=0)
             self.render(cv2.resize(full,None,fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC),numframes=4)
     def reload_video(self,*args):
-        if self.inputvar.get() == "webcam":
-            name = 0
+        if "webcam" in self.inputvar.get():
+            if len(self.inputvar.get()) == len("webcam"):
+                name = 0
+            else:
+                name = int(self.inputvar.get()[len("webcam"):])
         else:
             name = self.inputvar.get()
         if self.cap !=None:
@@ -212,7 +229,7 @@ class App():
         highx = self.xyz.coroodinateToPoint((pos[0]+10,pos[1]),printerpos=pos)
         highy = self.xyz.coroodinateToPoint((pos[0],pos[1]+10),printerpos=pos)
         cv2.arrowedLine(self.frame,center,highx,(0,0,255),2)
-        cv2.arrowedLine(self.frame,center,highy,(0,255,0),3)
+        cv2.arrowedLine(self.frame,center,highy,(0,255,0),2)
     def drawCenter(self):
         pos = self.printer.get_current_pos()
         center = pos[:2]+self.xyz.centerScreenOffset
@@ -229,7 +246,11 @@ class App():
         self.menu = tk.Frame(self.root)
         self.menu.grid(row = 0,column = 1,sticky = "NSEW")
         #self.root.columnconfigure(1,weight = 1)
-        inputlist = ["webcam"]
+        webcamindexes = FrameOperations.getCameraIndexes()
+        if len(webcamindexes)<=1:
+            inputlist = ["webcam"]
+        else:
+            inputlist = [f"webcam {i}" for i in webcamindexes]
         for entry in scandir('.'):
             if entry.is_file():
                 if entry.name.endswith(".mp4"):
@@ -238,7 +259,7 @@ class App():
         self.inputs = tk.OptionMenu(self.menu,self.inputvar,*inputlist )
         self.inputvar.trace("w", self.reload_video)
         self.cap = None
-        self.inputvar.set("webcam")
+        self.inputvar.set(inputlist[0])
         self.inputs.grid(row = 0,column = 0,sticky= "NSEW")
         #self.inputs.configure(state='disable')
         self.make_controls()
@@ -529,20 +550,20 @@ class App():
     def configure_colours_recusrive(self,widget:tk.Widget):
         background= widget.cget('bg')
         if background == "SystemButtonFace" or background == "#d9d9d9":
-            widget.configure (bg = "#1f3280")
+            widget.configure (bg = BACKGROUNDCOLOUR)
         elif background=="SystemWindow":
-            widget.configure (bg = "#182866")
+            widget.configure (bg = TEXTBACKGORUNDCOLOUR)
         if isinstance(widget,tk.Frame):
             for child in widget.winfo_children():
                self.configure_colours_recusrive(child)
         else:
-            widget.configure(fg ="white",highlightbackground ="#1f3280")
+            widget.configure(fg =FOREGROUNDCOLOUR,highlightbackground =BACKGROUNDCOLOUR)
             if isinstance(widget,(tk.Checkbutton,tk.Radiobutton)):
-                widget.config(selectcolor="Black",activebackground="#bd6e08")
+                widget.config(selectcolor=SELECTCOLOUR,activebackground=ACTIVEBACKGROUNDCOLOUR)
             elif isinstance(widget,(tk.Button,tk.Scale,tk.OptionMenu)):
-                widget.config(activebackground="#bd6e08",)
+                widget.config(activebackground=ACTIVEBACKGROUNDCOLOUR)
             elif isinstance(widget,tk.Entry):
-                widget.configure(insertbackground ="white")
+                widget.configure(insertbackground =FOREGROUNDCOLOUR)
     def make_speeds(self):
         self.speedFrame= tk.Frame(self.menu)
         self.speedFrame.grid(row = 9,sticky="NSEW")
