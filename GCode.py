@@ -1,12 +1,11 @@
-import re
 import serial
 import threading
 import time
 
 class gCodeSender():
     def __init__(self):
-        printerPort = "COM11"
-        clawPort = "COM8"
+        printerPort = "COM4"
+        clawPort = "COM3"
         self.link = serial.Serial(printerPort, 115200)
         while True:
             message = self.link.readline()
@@ -110,6 +109,8 @@ class gCodeSender():
     def add_next(self,x= None,y = None,z = None,claw = None,mode= "Absolute"):
         #if not(x or y or z or claw):
         #print(x,y,z,claw,mode)
+        if (self.command_is_finished() and (x,y,z,claw) ==self.get_current_pos()):
+            return
         if not(x is None and y is None and z is None):
             if mode !=self.mode:
                 if mode[0].capitalize() == "A":
@@ -225,7 +226,7 @@ class virtualprinter():
         pass
 
 def createPrinter() ->gCodeSender:
-    mode = "A"
+    mode = "P"
     if mode =="A":
         try:
             printer = gCodeSender()
