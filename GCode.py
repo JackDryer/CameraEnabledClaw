@@ -226,7 +226,7 @@ class virtualprinter():
         pass
 
 def createPrinter() ->gCodeSender:
-    mode = "P"
+    mode = "A"
     if mode =="A":
         try:
             printer = gCodeSender()
