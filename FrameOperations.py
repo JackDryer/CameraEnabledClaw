@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
 
-CENTERCIRCLECOLOUR = (0,255,255)
-CONTOURCOLOUR=(0, 255, 0)
+CENTERCIRCLECOLOUR = (0, 255, 255)
+CONTOURCOLOUR = (0, 255, 0)
 MAXCAMERAS = 10
 
-def maskImage(frame,colour,tollerance=10,closings=1,openings=1,dilateions=0):
+
+def maskImage(frame, colour, tollerance=10, closings=1, openings=1, dilateions=0):
     frame = cv2.resize(frame, None, fx=1, fy=1, interpolation=cv2.INTER_AREA)
     # Convert BGR to HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -14,16 +15,16 @@ def maskImage(frame,colour,tollerance=10,closings=1,openings=1,dilateions=0):
     # old colour values
     #lower = np.array([155,25,0])
     #upper = np.array([179,255,255])
-    #newer colour values
+    # newer colour values
     ##lower = np.array([0, 200, 120])
     ##upper = np.array([179, 255, 255])
-    lower,upper = pad(np.array(colour),tollerance)
+    lower, upper = pad(np.array(colour), tollerance)
     # Threshold the HSV image to get only blue colors
     mask = cv2.inRange(hsv, lower, upper)
     # post prosseing
-    kernel = np.ones((5,5),np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel,iterations=closings)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel,iterations=openings)
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=closings)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=openings)
     mask = cv2.dilate(mask, None, iterations=dilateions)
     # gray = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
     return (frame, mask)
@@ -38,7 +39,7 @@ def findMasks(frame, *colours, tolllerance=10):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     # define range of any color in HSV (hue, saturation, value)
     masks = []
-    kernal = np.ones((40,40),np.uint8)
+    kernal = np.ones((40, 40), np.uint8)
     for x, i in enumerate(colours):
         if not(isinstance(i, np.ndarray)):
             i = np.array(list(i))
@@ -49,8 +50,9 @@ def findMasks(frame, *colours, tolllerance=10):
     return frame, masks
 
 
-def findCentre(frame, mask,minradius=100):
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+def findCentre(frame, mask, minradius=100):
+    contours, hierarchy = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     center = None
     scale = 1
     centerPoint = None
@@ -58,52 +60,59 @@ def findCentre(frame, mask,minradius=100):
         c = contours[k][:]
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         M = cv2.moments(c)
-        if M["m00"]!=0:
+        if M["m00"] != 0:
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
         else:
-          center = (int(x),int(y))
+            center = (int(x), int(y))
         if radius > minradius:
-            cv2.circle(frame, center, int(60*scale), CENTERCIRCLECOLOUR, 10*scale)
+            cv2.circle(frame, center, int(60*scale),
+                       CENTERCIRCLECOLOUR, 10*scale)
             cv2.circle(frame, center, int(10*scale), CENTERCIRCLECOLOUR, -1)
             centerPoint = [center[0], center[1]]
     cv2.drawContours(frame, contours, -1, CONTOURCOLOUR, 3)
     return(frame, centerPoint)
-def findCentreLargest(frame,mask):
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+
+def findCentreLargest(frame, mask):
+    contours, hierarchy = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     if len(contours) != 0:
         # draw in blue the contours that were founded
         cv2.drawContours(frame, contours, -1, 255, 3)
 
         # find the biggest countour (c) by the area
-        c = max(contours, key = cv2.contourArea)
-        x,y,w,h = cv2.boundingRect(c)
+        c = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(c)
 
         # draw the biggest contour (c) in green
-        cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
-        center = (int(x+(w/2)),int(y+w/2))
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        center = (int(x+(w/2)), int(y+w/2))
         cv2.circle(frame, center, int(10), (0, 255, 255), -1)
     else:
         center = None
     return frame, center
 
-def findCentreOfCirle(blackandwhite,mask =None):
+
+def findCentreOfCirle(blackandwhite, mask=None):
     if not mask is None:
         output = cv2.bitwise_and(blackandwhite, blackandwhite, mask=mask)
-        cv2.imshow("and",output)
-    blackandwhite =  cv2.resize(blackandwhite,None,fx = 0.25,fy = 0.25,interpolation = cv2.INTER_AREA)
-    blackandwhite = cv2.medianBlur(blackandwhite,5)
-    colour = cv2.cvtColor(blackandwhite,cv2.COLOR_GRAY2BGR)
-    circles = cv2.HoughCircles(blackandwhite,cv2.HOUGH_GRADIENT,1,20,
-                            param1=50,param2=30,minRadius=0,maxRadius=30)
+        cv2.imshow("and", output)
+    blackandwhite = cv2.resize(
+        blackandwhite, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
+    blackandwhite = cv2.medianBlur(blackandwhite, 5)
+    colour = cv2.cvtColor(blackandwhite, cv2.COLOR_GRAY2BGR)
+    circles = cv2.HoughCircles(blackandwhite, cv2.HOUGH_GRADIENT, 1, 20,
+                               param1=50, param2=30, minRadius=0, maxRadius=30)
     if not circles is None:
         circles = np.uint16(np.around(circles))
-        for i in circles[0,:]:
+        for i in circles[0, :]:
             # draw the outer circle
-            cv2.circle(colour,(i[0],i[1]),i[2],(0,255,0),2)
+            cv2.circle(colour, (i[0], i[1]), i[2], (0, 255, 0), 2)
             # draw the center of the circle
-            cv2.circle(colour,(i[0],i[1]),2,(0,0,255),3)
-    colour =  cv2.resize(colour,None,fx = 4,fy = 4,interpolation = cv2.INTER_CUBIC)
-    return colour ,(0,0)
+            cv2.circle(colour, (i[0], i[1]), 2, (0, 0, 255), 3)
+    colour = cv2.resize(colour, None, fx=4, fy=4,
+                        interpolation=cv2.INTER_CUBIC)
+    return colour, (0, 0)
 
 
 def findRects(frame, mask):
@@ -118,19 +127,23 @@ def findRects(frame, mask):
             box = np.int0(box)
             frame = cv2.drawContours(frame, [box], 0, (255, 0, 0), 2)
     return frame
-def distanceBetween(point1,point2):
+
+
+def distanceBetween(point1, point2):
     point1 = np.array(point1)
     point2 = np.array(point2)
     return np.linalg.norm(np.linalg.norm(point1-point2))
 
-def scalePoint(point:np.array,scalefactor,origin=(0,0)):
+
+def scalePoint(point: np.array, scalefactor, origin=(0, 0)):
     return (scalefactor*(point-origin))+origin
+
 
 def getCameraIndexes():
     # checks the first 10 indexes.
     arr = []
     for i in range(MAXCAMERAS):
-        cap = cv2.VideoCapture(i,cv2.CAP_DSHOW)# suppresses warings
+        cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)  # suppresses warings
         if cap.isOpened():
             arr.append(i)
         cap.release()
@@ -146,16 +159,18 @@ def rotatePoints(points, angle=0, origin=(0, 0), anlgleunit="Radians"):
     points = np.atleast_2d(points)
     return np.squeeze((rotationmatrix @ (points.T-origin.T) + origin.T).T)
 
-def rotatedRectWithMaxArea(w, h, angle): #from https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders/16778797#16778797
+
+# from https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders/16778797#16778797
+def rotatedRectWithMaxArea(w, h, angle):
     """
     Given a rectangle of size wxh that has been rotated by 'angle' (in
     radians), computes the width and height of the largest possible
     axis-aligned rectangle (maximal area) within the rotated rectangle.
     """
     if w <= 0 or h <= 0:
-        return 0,0
+        return 0, 0
     width_is_longer = w >= h
-    side_long, side_short = (w,h) if width_is_longer else (h,w)
+    side_long, side_short = (w, h) if width_is_longer else (h, w)
 
     # since the solutions for angle, -angle and 180-angle are all the same,
     # if suffices to look at the first quadrant and the absolute values of sin,cos:
@@ -164,15 +179,15 @@ def rotatedRectWithMaxArea(w, h, angle): #from https://stackoverflow.com/questio
         # half constrained case: two crop corners touch the longer side,
         #   the other two corners are on the mid-line parallel to the longer line
         x = 0.5*side_short
-        wr,hr = (x/sin_a,x/cos_a) if width_is_longer else (x/cos_a,x/sin_a)
+        wr, hr = (x/sin_a, x/cos_a) if width_is_longer else (x/cos_a, x/sin_a)
     else:
         # fully constrained case: crop touches all 4 sides
         cos_2a = cos_a*cos_a - sin_a*sin_a
-        wr,hr = (w*cos_a - h*sin_a)/cos_2a, (h*cos_a - w*sin_a)/cos_2a
+        wr, hr = (w*cos_a - h*sin_a)/cos_2a, (h*cos_a - w*sin_a)/cos_2a
 
-    return wr,hr
+    return wr, hr
 
-# stuff i tried to get rotation before just using 3 masks of circles
+# below is stuff i tried to get rotation before just using 3 masks of circles
 
 
 def findCorners(frame):
@@ -257,26 +272,29 @@ if __name__ == "__main__":
         print("Error opening video stream or file")
 
     img = cv2.imread('Orieenter.png', 0)
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    out = cv2.VideoWriter('orbs.mp4', fourcc, 20.0, (780, 620))
     # Read until video is completed
     while(cap.isOpened()):
         # Capture frame-by-frame
         ret, frame = cap.read()
         # print(frame.size.as_integer_ratio())
         if ret == True:
-            frame, mask = maskImage(frame)
-            frame, centerpoint = findCentre(frame, mask)
+            #frame, mask = maskImage(frame)
+            #frame, centerpoint = findCentre(frame, mask)
             # Display the resulting frame
-            #frame,orbs = findImage(frame)
+            frame, orbs = findImage(frame)
             #frame = findRects(frame,mask)
             frame = cv2.resize(frame, None, fx=0.5, fy=0.5,
                                interpolation=cv2.INTER_CUBIC)
-            mask = cv2.resize(mask, None, fx=0.25, fy=0.25,
-                              interpolation=cv2.INTER_CUBIC)
-            #orbs = cv2.resize(orbs,None,fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC)
+            # mask = cv2.resize(mask, None, fx=0.25, fy=0.25,
+            # interpolation=cv2.INTER_CUBIC)
+            orbs = cv2.resize(orbs, (780, 620), interpolation=cv2.INTER_CUBIC)
             cv2.imshow('Frame', frame)
-            cv2.imshow('Mask', mask)
-            print(centerpoint)
-            # cv2.imshow("Orbs",orbs)
+            #cv2.imshow('Mask', mask)
+            # print(centerpoint)
+            out.write(orbs)
+            cv2.imshow("Orbs", orbs)
             # Press Q on keyboard to  exit
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
@@ -287,6 +305,7 @@ if __name__ == "__main__":
 
     # When everything done, release the video capture object
     cap.release()
+    out.release()
 
     # Closes all the frames
     cv2.destroyAllWindows()
